@@ -25,5 +25,11 @@
       "run_at": "document_start"
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked/blocked.html", "blocked/blocked.css", "blocked/blocked.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "options_page": "dashboard/dashboard.html"
 }
