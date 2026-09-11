@@ -48,8 +48,10 @@ async function commitTime() {
             const now = Date.now();
             const timeDiff = now - res.lastUpdateTime;
             
-            // Only commit if time diff is reasonable (e.g. less than 24 hours, to prevent bugs from sleep mode)
-            if (timeDiff > 0 && timeDiff < 86400000) {
+            // The tracker alarm runs every 1 minute.
+            // If the timeDiff is significantly larger (e.g., > 3 minutes),
+            // it means the laptop was asleep or the browser was closed. We shouldn't count this time.
+            if (timeDiff > 0 && timeDiff < 180000) {
                 let usage = res.usage || {};
                 if (!usage[res.activeDomain]) {
                     usage[res.activeDomain] = 0;
@@ -176,10 +178,16 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
     await commitTime();
     chrome.storage.local.set({ activeDomain: null });
   } else {
-    chrome.tabs.query({ active: true, windowId: windowId }, (tabs) => {
-      if (tabs.length > 0) {
-        updateActiveDomain(tabs[0].url);
+    chrome.windows.get(windowId, (window) => {
+      if (window && window.type === 'popup') {
+        // Ignore extension popups, keep tracking the underlying page
+        return;
       }
+      chrome.tabs.query({ active: true, windowId: windowId }, (tabs) => {
+        if (tabs.length > 0) {
+          updateActiveDomain(tabs[0].url);
+        }
+      });
     });
   }
 });
