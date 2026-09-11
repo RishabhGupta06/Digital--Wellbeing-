@@ -20,7 +20,11 @@ function getDomain(url) {
   if (!url || url.startsWith('chrome://') || url.startsWith('chrome-extension://')) return null;
   try {
     const urlObj = new URL(url);
-    return urlObj.hostname;
+    let hostname = urlObj.hostname;
+    if (hostname.startsWith('www.')) {
+        hostname = hostname.substring(4);
+    }
+    return hostname;
   } catch (e) {
     return null;
   }

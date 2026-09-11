@@ -13,7 +13,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (url && !url.startsWith('chrome://') && !url.startsWith('chrome-extension://')) {
         try {
-            domain = new URL(url).hostname;
+            let hostname = new URL(url).hostname;
+            if (hostname.startsWith('www.')) hostname = hostname.substring(4);
+            domain = hostname;
         } catch(e) {}
     }
     

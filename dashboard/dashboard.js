@@ -95,7 +95,8 @@ function renderChart(usageData) {
 
 // --- Limits Logic ---
 document.getElementById('add-limit-btn').addEventListener('click', () => {
-    const domain = document.getElementById('new-limit-domain').value.trim();
+    let domain = document.getElementById('new-limit-domain').value.trim();
+    if (domain.startsWith('www.')) domain = domain.substring(4);
     const time = parseInt(document.getElementById('new-limit-time').value);
     
     if (domain && time > 0) {
@@ -148,7 +149,8 @@ document.getElementById('dashboard-focus-toggle').addEventListener('change', (e)
 });
 
 document.getElementById('add-focus-btn').addEventListener('click', () => {
-    const domain = document.getElementById('new-focus-domain').value.trim();
+    let domain = document.getElementById('new-focus-domain').value.trim();
+    if (domain.startsWith('www.')) domain = domain.substring(4);
     if (domain) {
         chrome.storage.local.get(['focusSites'], (res) => {
             const sites = res.focusSites || [];
