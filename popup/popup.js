@@ -87,5 +87,8 @@ function updateTimeDisplay(domain) {
             document.getElementById('limit-text').textContent = `No limit set`;
             circle.style.background = `conic-gradient(var(--accent-color) 0%, #334155 0%)`;
         }
+
+        // Print debug info
+        document.getElementById('debug-info').textContent = `Debug: activeDomain=${res.activeDomain}, lastUpdate=${res.lastUpdateTime ? (Date.now()-res.lastUpdateTime) + 'ms ago' : 'null'}, usageMs=${usageMs}, rawUsage=${res.usage && res.usage[domain] ? res.usage[domain] : 0}`;
     });
 }
