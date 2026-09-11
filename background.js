@@ -191,3 +191,10 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
     });
   }
 });
+
+// Sync state when service worker starts or wakes up
+chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+  if (tabs && tabs.length > 0) {
+    updateActiveDomain(tabs[0].url);
+  }
+});
