@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Wellbeing Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Wellbeing</span>
+            </div>
+            <nav>
+                <a href="#overview" class="nav-item active">Overview</a>
+                <a href="#limits" class="nav-item">Website Limits</a>
+                <a href="#focus" class="nav-item">Focus Mode</a>
+                <a href="#bedtime" class="nav-item">Bedtime Mode</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="topbar">
+                <h1>Dashboard</h1>
+                <div class="date-display" id="current-date">Today</div>
+            </header>
+
+            <section id="overview" class="section-block active-section">
+                <h2>Usage Overview</h2>
+                <div class="chart-container card">
+                    <canvas id="usageChart"></canvas>
+                </div>
+            </section>
+
+            <section id="limits" class="section-block">
+                <h2>Website Limits</h2>
+                <div class="card limits-card">
+                    <div class="add-limit-form">
+                        <input type="text" id="new-limit-domain" placeholder="e.g., youtube.com" class="input-field">
+                        <input type="number" id="new-limit-time" placeholder="Minutes" class="input-field" min="1">
+                        <button id="add-limit-btn" class="btn primary-btn">Set Limit</button>
+                    </div>
+                    <ul class="limits-list" id="limits-list">
+                        <!-- Limits will be populated here -->
+                    </ul>
+                </div>
+            </section>
+
+            <section id="focus" class="section-block">
+                <h2>Focus Mode</h2>
+                <div class="card focus-card">
+                    <div class="toggle-container">
+                        <span>Enable Focus Mode</span>
+                        <label class="switch">
+                            <input type="checkbox" id="dashboard-focus-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="desc">When active, you cannot access the websites listed below.</p>
+                    <div class="add-focus-form">
+                        <input type="text" id="new-focus-domain" placeholder="e.g., twitter.com" class="input-field">
+                        <button id="add-focus-btn" class="btn primary-btn">Add to Blocklist</button>
+                    </div>
+                    <ul class="limits-list" id="focus-sites-list">
+                        <!-- Focus sites will be populated here -->
+                    </ul>
+                </div>
+            </section>
+
+            <section id="bedtime" class="section-block">
+                <h2>Bedtime Mode</h2>
+                <div class="card bedtime-card">
+                    <div class="toggle-container">
+                        <span>Enable Bedtime Mode</span>
+                        <label class="switch">
+                            <input type="checkbox" id="bedtime-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="desc">Blocks all websites during the specified hours to help you disconnect.</p>
+                    <div class="time-inputs">
+                        <div class="time-group">
+                            <label>Start Time</label>
+                            <input type="time" id="bedtime-start" class="input-field">
+                        </div>
+                        <div class="time-group">
+                            <label>End Time</label>
+                            <input type="time" id="bedtime-end" class="input-field">
+                        </div>
+                        <button id="save-bedtime-btn" class="btn primary-btn" style="align-self: flex-end;">Save Schedule</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="dashboard.js"></script>
+</body>
+</html>

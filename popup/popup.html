@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Wellbeing Popup</title>
+    <link rel="stylesheet" href="popup.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="popup-container">
+        <header>
+            <h2>Wellbeing</h2>
+            <button id="dashboard-btn" title="Open Dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </button>
+        </header>
+
+        <div class="site-info">
+            <p class="label">Current Site</p>
+            <h3 id="current-domain">Loading...</h3>
+        </div>
+
+        <div class="time-display">
+            <div class="time-circle">
+                <span id="time-spent">0m</span>
+            </div>
+            <p id="limit-text" class="limit-text">No limit set</p>
+        </div>
+
+        <div class="quick-toggles">
+            <div class="toggle-row">
+                <span>Focus Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="focus-toggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

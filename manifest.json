@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Digital Wellbeing for Web",
+  "version": "1.0",
+  "description": "Track your website usage and set limits to stay focused.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "options_page": "dashboard/dashboard.html"
+}
