@@ -44,8 +44,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function updateTimeDisplay(domain) {
-    chrome.storage.local.get(['usage', 'limits'], (res) => {
-        const usageMs = (res.usage && res.usage[domain]) ? res.usage[domain] : 0;
+    chrome.storage.local.get(['usage', 'limits', 'activeDomain', 'lastUpdateTime'], (res) => {
+        let usageMs = (res.usage && res.usage[domain]) ? res.usage[domain] : 0;
+        
+        // Add live time if this is the active domain
+        if (res.activeDomain === domain && res.lastUpdateTime) {
+            usageMs += (Date.now() - res.lastUpdateTime);
+        }
+        
         const limitMins = (res.limits && res.limits[domain]) ? res.limits[domain] : null;
         
         const usageMins = Math.floor(usageMs / 60000);

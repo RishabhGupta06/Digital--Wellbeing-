@@ -1,19 +1,4 @@
-let activeDomain = null;
-let lastUpdateTime = Date.now();
-const UPDATE_INTERVAL_MS = 1000;
-
-// Initialize state
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get(['usage', 'limits', 'focusMode', 'bedtimeMode'], (res) => {
-    if (!res.usage) chrome.storage.local.set({ usage: {} });
-    if (!res.limits) chrome.storage.local.set({ limits: {} });
-    if (res.focusMode === undefined) chrome.storage.local.set({ focusMode: false, focusSites: [] });
-    if (res.bedtimeMode === undefined) chrome.storage.local.set({ bedtimeMode: false, bedtimeStart: "22:00", bedtimeEnd: "07:00" });
-  });
-
-  // Set an alarm for daily reset (midnight)
-  chrome.alarms.create("dailyReset", { periodInMinutes: 1440 });
-});
+// background.js - MV3 Compliant Time Tracking
 
 // Helper to get domain from URL
 function getDomain(url) {
@@ -30,72 +15,80 @@ function getDomain(url) {
   }
 }
 
-// Update time tracking periodically
-setInterval(async () => {
-  if (!activeDomain) return;
-
-  const now = Date.now();
-  const timeDiff = now - lastUpdateTime;
-  lastUpdateTime = now;
-
-  // Add time to storage
-  chrome.storage.local.get(['usage', 'limits'], (res) => {
-    let usage = res.usage || {};
-    let limits = res.limits || {};
-
-    if (!usage[activeDomain]) {
-      usage[activeDomain] = 0;
-    }
+// Initialize state
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.get(['usage', 'limits', 'focusMode', 'bedtimeMode'], (res) => {
+    if (!res.usage) chrome.storage.local.set({ usage: {} });
+    if (!res.limits) chrome.storage.local.set({ limits: {} });
+    if (res.focusMode === undefined) chrome.storage.local.set({ focusMode: false, focusSites: [] });
+    if (res.bedtimeMode === undefined) chrome.storage.local.set({ bedtimeMode: false, bedtimeStart: "22:00", bedtimeEnd: "07:00" });
     
-    // timeDiff is in ms, we store ms
-    usage[activeDomain] += timeDiff;
-    chrome.storage.local.set({ usage });
-
-    // Check if limit exceeded
-    if (limits[activeDomain] && usage[activeDomain] >= limits[activeDomain] * 60 * 1000) {
-      blockActiveTab();
-    }
+    // Initial tracking state
+    chrome.storage.local.set({
+        activeDomain: null,
+        lastUpdateTime: Date.now()
+    });
   });
-}, UPDATE_INTERVAL_MS);
 
-// Handle tab activation
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  const tab = await chrome.tabs.get(activeInfo.tabId);
-  updateActiveDomain(tab.url);
+  // Set an alarm for daily reset (midnight)
+  chrome.alarms.create("dailyReset", { periodInMinutes: 1440 });
+  // Set an alarm for periodic time tracking (every 1 minute)
+  chrome.alarms.create("trackerAlarm", { periodInMinutes: 1 });
 });
 
-// Handle URL updates within a tab
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0 && tabs[0].id === tabId) {
-        updateActiveDomain(changeInfo.url);
-      }
+// Update time in storage
+async function commitTime() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['activeDomain', 'lastUpdateTime', 'usage', 'limits'], (res) => {
+            if (!res.activeDomain || !res.lastUpdateTime) {
+                resolve();
+                return;
+            }
+
+            const now = Date.now();
+            const timeDiff = now - res.lastUpdateTime;
+            
+            // Only commit if time diff is reasonable (e.g. less than 24 hours, to prevent bugs from sleep mode)
+            if (timeDiff > 0 && timeDiff < 86400000) {
+                let usage = res.usage || {};
+                if (!usage[res.activeDomain]) {
+                    usage[res.activeDomain] = 0;
+                }
+                usage[res.activeDomain] += timeDiff;
+                
+                chrome.storage.local.set({ 
+                    usage: usage,
+                    lastUpdateTime: now // Reset the timer
+                }, () => {
+                    // Check limits after committing
+                    if (res.limits && res.limits[res.activeDomain]) {
+                        if (usage[res.activeDomain] >= res.limits[res.activeDomain] * 60 * 1000) {
+                            blockActiveTab("Time limit reached.");
+                        }
+                    }
+                    resolve();
+                });
+            } else {
+                // If invalid time diff, just reset the timer
+                chrome.storage.local.set({ lastUpdateTime: now }, resolve);
+            }
+        });
     });
-  }
-});
+}
 
-// Handle window focus changes
-chrome.windows.onFocusChanged.addListener((windowId) => {
-  if (windowId === chrome.windows.WINDOW_ID_NONE) {
-    activeDomain = null; // Browser lost focus
-  } else {
-    chrome.tabs.query({ active: true, windowId: windowId }, (tabs) => {
-      if (tabs.length > 0) {
-        updateActiveDomain(tabs[0].url);
-      }
+async function updateActiveDomain(newUrl) {
+    await commitTime(); // Save time for the PREVIOUS domain
+
+    const newDomain = getDomain(newUrl);
+    
+    chrome.storage.local.set({
+        activeDomain: newDomain,
+        lastUpdateTime: Date.now()
+    }, () => {
+        if (newDomain) {
+            checkAndEnforceLimits(newDomain);
+        }
     });
-  }
-});
-
-function updateActiveDomain(url) {
-  const domain = getDomain(url);
-  activeDomain = domain;
-  lastUpdateTime = Date.now();
-  
-  if (domain) {
-    checkAndEnforceLimits(domain);
-  }
 }
 
 function checkAndEnforceLimits(domain) {
@@ -151,9 +144,42 @@ function blockActiveTab(reason) {
   });
 }
 
+// Alarms for background tasks
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "dailyReset") {
-    // Clear usage data at midnight
     chrome.storage.local.set({ usage: {} });
+  } else if (alarm.name === "trackerAlarm") {
+    // Every 1 minute, commit the time so far
+    commitTime();
+  }
+});
+
+// Tab events
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  const tab = await chrome.tabs.get(activeInfo.tabId);
+  updateActiveDomain(tab.url);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0 && tabs[0].id === tabId) {
+        updateActiveDomain(changeInfo.url);
+      }
+    });
+  }
+});
+
+chrome.windows.onFocusChanged.addListener(async (windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) {
+    // Browser lost focus, stop tracking current domain
+    await commitTime();
+    chrome.storage.local.set({ activeDomain: null });
+  } else {
+    chrome.tabs.query({ active: true, windowId: windowId }, (tabs) => {
+      if (tabs.length > 0) {
+        updateActiveDomain(tabs[0].url);
+      }
+    });
   }
 });
